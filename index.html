@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>AuraPass Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root { 
+            --primary: #4f46e5; --primary-dark: #3730a3; --accent: #f97316;
+            --bg-body: #f8fafc; --bg-card: #ffffff; --text-main: #1e293b; --text-light: #64748b;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1); --radius: 12px;
+            --nav-height: 70px; --border: #e2e8f0;
+            --gradient-hero: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+        }
+
+        /* --- THEMES --- */
+        body.dark-mode {
+            --bg-body: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-light: #cbd5e1;
+            --border: #334155; --primary: #6366f1;
+            --gradient-hero: linear-gradient(135deg, #312e81 0%, #4c1d95 100%);
+        }
+        body.glass-mode {
+            --bg-body: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop') center/cover fixed;
+            --bg-card: rgba(255, 255, 255, 0.1); --text-main: #ffffff; --text-light: #e2e8f0;
+            --border: rgba(255, 255, 255, 0.2); --primary: #60a5fa;
+            backdrop-filter: blur(10px);
+        }
+        
+        body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; transition: 0.3s; overflow-x: hidden; }
+        
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .btn { padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; font-size: 0.95rem; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-secondary { background: #64748b; color: white; cursor: default; }
+        .btn-icon { background: none; font-size: 1.2rem; color: var(--text-main); padding: 5px; }
+
+        /* --- LANDING PAGE STYLES --- */
+        .landing-nav {
+            display: flex; justify-content: space-between; align-items: center; padding: 20px 5%;
+            position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+        }
+        
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 80px 20px 40px;
+            background: var(--bg-body);
+            position: relative;
+        }
+
+        .hero-bg-blob {
+            position: absolute;
+            width: 600px; height: 600px;
+            background: var(--primary);
+            filter: blur(80px);
+            opacity: 0.1;
+            border-radius: 50%;
+            z-index: 0;
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .hero-content { z-index: 1; max-width: 800px; animation: slideUp 0.8s ease-out; }
+        .hero-title { font-size: 3.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 20px; background: var(--gradient-hero); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+        .hero-subtitle { font-size: 1.2rem; color: var(--text-light); margin-bottom: 40px; line-height: 1.6; }
+        
+        .features-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;
+            max-width: 1200px; margin: 50px auto; padding: 0 20px; z-index: 1; position: relative;
+        }
+        .feature-card {
+            background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border);
+            text-align: center; transition: 0.3s; box-shadow: var(--shadow);
+        }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-color: var(--primary); }
+        .feature-icon { font-size: 2.5rem; color: var(--primary); margin-bottom: 20px; }
+
+        .footer {
+            text-align: center; padding: 30px; background: var(--bg-card); border-top: 1px solid var(--border);
+            font-size: 0.9rem; color: var(--text-light); margin-top: auto;
+        }
+
+        /* --- LOGIN OVERLAY --- */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+            z-index: 1000; display: none; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .login-card { 
+            width: 100%; max-width: 400px; background: var(--bg-card); padding: 40px; 
+            border-radius: 20px; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+        }
+        .close-login {
+            position: absolute; top: 15px; right: 20px; font-size: 1.5rem; 
+            color: var(--text-light); cursor: pointer; transition: 0.2s; background: none; border: none;
+        }
+        .close-login:hover { color: var(--text-main); transform: scale(1.1); }
+
+        /* --- DASHBOARD & GENERAL --- */
+        .navbar {
+            height: var(--nav-height); background: var(--bg-card); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 5%; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); border-bottom: 1px solid var(--border);
+        }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+        .logo-a {
+            display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border-radius: 12px;
+            font-size: 1.8rem; font-weight: 900; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        .card { background: var(--bg-card); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); }
+        
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        input, select, textarea {
+            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; 
+            font-size: 1rem; box-sizing: border-box; background: var(--bg-body); color: var(--text-main);
+        }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        /* --- TICKET STYLES --- */
+        #ticket-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .close-btn { position: absolute; top: 20px; right: 30px; background: none; border: none; color: white; font-size: 2.5rem; cursor: pointer; z-index: 2001; }
+        #pdf-ticket { width: 800px; height: 300px; background: #fff; display: flex; border-radius: 10px; overflow: hidden; animation: slideUp 0.4s ease; color: #333; }
+        .ticket-main { flex: 2.5; position: relative; display: flex; border-right: 2px dashed #ccc; }
+        .ticket-barcode-side { width: 60px; height: 100%; background: #222; color: white; display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Libre Barcode 39 Text'; font-size: 2rem; }
+        .ticket-content { flex: 1; padding: 30px; position: relative; background: url('https://www.transparenttextures.com/patterns/cubes.png'); }
+        .ticket-header h1 { font-size: 3.5rem; margin: 0; line-height: 1; color: #111; letter-spacing: -2px; }
+        .ticket-details { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .detail-item small { display: block; text-transform: uppercase; font-size: 0.7rem; color: #666; font-weight: 600; }
+        .detail-item span { font-size: 1.1rem; font-weight: 600; color: #333; }
+        .price-badge { position: absolute; bottom: 15px; right: 15px; width: 73px; height: 73px; background: #e11d48; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; border: 2px dashed white; transform: rotate(-15deg); box-shadow: 0 4px 10px rgba(225,29,72,0.4); }
+        .ticket-stub { flex: 1; background: #f3f4f6; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; border-left: 2px dashed white; position: relative; }
+        .stub-header { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg); position: absolute; right: 15px; top: 30px; height: 240px; color: #ccc; letter-spacing: 5px; }
+        .barcode-horizontal { font-family: 'Libre Barcode 39 Text'; font-size: 3rem; margin-top: auto; color: #333; }
+
+        /* --- RESPONSIVE --- */
+        .mobile-menu { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100%; background: var(--bg-card); padding: 20px; z-index: 99; border-bottom: 1px solid var(--border); flex-direction: column; }
+        .mobile-menu.show { display: flex; }
+        .mobile-menu button { text-align: left; padding: 15px; border-radius: 8px; background: none; border: none; color: var(--text-main); font-weight: 600; margin-bottom: 5px; }
+        .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .grid-events { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.2rem; }
+            .nav-links { display: none; } 
+            .mobile-toggle { display: block; }
+            .grid-2, .grid-events, .ticket-details { grid-template-columns: 1fr; }
+            #pdf-ticket { width: 95%; height: auto; flex-direction: column; }
+            .ticket-main { border-right: none; border-bottom: 2px dashed #ccc; }
+            .ticket-stub { border-left: none; border-top: 2px dashed white; height: 150px; }
+            .ticket-barcode-side { display: none; }
+            .stub-header { display: none; }
+            .hero-bg-blob { width: 300px; height: 300px; }
+            .price-badge { width: 60px; height: 60px; font-size: 0.8rem; }
+        }
+
+        @keyframes float { 0% {transform: translate(0,0);} 50% {transform: translate(20px, -20px);} 100% {transform: translate(0,0);} }
+        @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+        @keyframes slideUp { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+    </style>
+</head>
+<body class="light-mode">
+
+    <div id="landing-page">
+        <nav class="landing-nav">
+            <div class="logo"><div class="logo-a">A</div> AuraPass</div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                 <button class="btn btn-icon" onclick="cycleTheme()"><i id="theme-icon-land" class="fas fa-moon"></i></button>
+                 <button class="btn btn-primary" onclick="showLogin()">Login <i class="fas fa-sign-in-alt"></i></button>
+            </div>
+        </nav>
+
+        <section class="hero-section">
+            <div class="hero-bg-blob"></div>
+            <div class="hero-content">
+                <h1 class="hero-title">Experience Campus Events<br>Like Never Before</h1>
+                <p class="hero-subtitle">The ultimate digital pass for all college activities. Register for events, manage your tickets, and stay updated with the latest announcements.</p>
+                <button class="btn btn-primary" style="padding: 15px 35px; font-size: 1.1rem;" onclick="showLogin()">Get Started Now</button>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-calendar-alt feature-icon"></i>
+                    <h3>Discover Events</h3>
+                    <p style="opacity: 0.7;">Browse upcoming hackathons, cultural fests, and workshops happening on campus.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-ticket-alt feature-icon"></i>
+                    <h3>Digital Tickets</h3>
+                    <p style="opacity: 0.7;">No more paper! Get your personalized QR tickets instantly upon registration.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-users feature-icon"></i>
+                    <h3>Community</h3>
+                    <p style="opacity: 0.7;">Join a vibrant community of students and organizers. Never miss an update.</p>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="footer">
+            <p>&copy; 2025 AuraPass. All rights reserved.</p>
+            <p style="font-weight: 600; color: var(--primary);">Designed & Developed by Amol Patil</p>
+        </footer>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <button class="close-login" onclick="hideLogin()">&times;</button>
+            <div style="font-size: 3rem; color: var(--primary); margin-bottom: 10px; display:flex; justify-content:center;">
+                <div class="logo-a" style="width:60px; height:60px; font-size:2.5rem;">A</div>
+            </div>
+            <h2 style="margin-bottom: 5px; color: var(--text-main);">Welcome Back</h2>
+            <p style="margin-bottom: 25px; opacity: 0.7;">Enter your credentials to access your dashboard.</p>
+            
+            <div class="form-group">
+                <label>User ID</label>
+                <input type="text" id="uid" placeholder="e.g. Aurapass-YCP-0000">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="upass" placeholder="••••••">
+            </div>
+            
+            <button class="btn btn-primary" style="width:100%; margin-top: 10px;" onclick="login()">Sign In</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <nav class="navbar">
+            <div class="logo"><div class="logo-a">A</div> AuraPass</div>
+            
+            <div class="nav-links" id="desktop-nav" style="display:flex; gap:10px;"></div>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn btn-icon" onclick="cycleTheme()"><i id="theme-icon-dash" class="fas fa-moon"></i></button>
+                <button class="btn btn-danger" style="padding: 5px 12px; font-size: 0.8rem;" onclick="logout()">Logout</button>
+                <button class="mobile-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+            </div>
+        </nav>
+        
+        <div class="mobile-menu" id="mobile-nav"></div>
+
+        <div class="container" id="main-content"></div>
+    </div>
+
+    <div id="ticket-modal">
+        <button class="close-btn" onclick="closeTicket()">&times;</button>
+        <div id="pdf-ticket">
+            <div class="ticket-main">
+                <div class="ticket-barcode-side">123456789</div>
+                <div class="ticket-content">
+                    <div class="ticket-header"><h1>EVENT TICKET</h1></div>
+                    <div class="ticket-details">
+                        <div class="detail-item"><small>Event Name</small><span id="t-evt">Event</span></div>
+                        <div class="detail-item"><small>Date & Time</small><span id="t-date">Date</span></div>
+                        <div class="detail-item"><small>Attendee</small><span id="t-name">Name</span></div>
+                        <div class="detail-item"><small>Ticket ID</small><span id="t-id">ID</span></div>
+                    </div>
+                    <div class="price-badge"><small style="font-size:0.6rem;">ADMIT</small><strong style="font-size:1.2rem;">ONE</strong></div>
+                </div>
+            </div>
+            <div class="ticket-stub">
+                <div style="text-align:left;"><h3 style="margin:0; color:#4f46e5;">AuraPass</h3><p style="font-size:0.7rem; color:#666;">Official Entry Pass</p></div>
+                <div><small style="display:block; color:#999; font-size:0.6rem;">GID</small><strong id="t-gid" style="font-size:0.9rem;">GID</strong></div>
+                <div class="barcode-horizontal">*12345*</div>
+                <div class="stub-header">TICKET</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Use absolute API when opened via file:// so requests go to the running backend
+    const API = (location.protocol === 'file:') ? 'http://localhost:5000/api' : '/api';
+    let token = localStorage.getItem('token');
+    let user = JSON.parse(localStorage.getItem('user'));
+
+    // --- THEME LOGIC ---
+    const themes = ['light-mode', 'dark-mode', 'glass-mode'];
+    let thIdx = parseInt(localStorage.getItem('thIdx')) || 0;
+    
+    function applyTheme() {
+        document.body.className = themes[thIdx];
+        const icons = ['fa-moon', 'fa-sun', 'fa-gem'];
+        const iconClass = `fas ${icons[thIdx]}`;
+        if(document.getElementById('theme-icon-land')) document.getElementById('theme-icon-land').className = iconClass;
+        if(document.getElementById('theme-icon-dash')) document.getElementById('theme-icon-dash').className = iconClass;
+    }
+    function cycleTheme() { thIdx = (thIdx+1)%3; localStorage.setItem('thIdx', thIdx); applyTheme(); }
+    applyTheme();
+
+    // --- INITIALIZATION ---
+    if(token && user) {
+        initDash();
+    } else {
+        // Show Landing Page by default (HTML structure is set for this)
+    }
+
+    // --- UI NAVIGATION FUNCTIONS ---
+    function showLogin() {
+        document.getElementById('login-screen').style.display = 'flex';
+    }
+    
+    function hideLogin() {
+        document.getElementById('login-screen').style.display = 'none';
+    }
+
+    // --- AUTH LOGIC ---
+    async function login() {
+        const gid = document.getElementById('uid').value;
+        const password = document.getElementById('upass').value;
+        if(!gid || !password) return alert("Please enter credentials");
+
+        try {
+            const res = await fetch(API+'/login', { 
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({gid, password}) 
+            });
+            const data = await res.json();
+
+            if(data.success) {
+                token = data.token; 
+                user = data;
+                localStorage.setItem('token', token); 
+                localStorage.setItem('user', JSON.stringify(user));
+                hideLogin();
+                initDash();
+            } else {
+                alert(data.message);
+            }
+        } catch(e) { 
+            console.error(e);
+            alert('Server Error. Check console.'); 
+        }
+    }
+
+    function logout() { 
+        localStorage.clear(); 
+        location.reload(); 
+    }
+
+    function initDash() {
+        document.getElementById('landing-page').classList.add('hidden');
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').classList.remove('hidden');
+        
+        const deskNav = document.getElementById('desktop-nav');
+        const mobNav = document.getElementById('mobile-nav');
+        let items = [];
+        
+        if(user.role === 'admin') {
+            items = [
+                {id:'admin-events', txt:'Events'}, 
+                {id:'admin-users', txt:'Users'}, 
+                {id:'admin-creds', txt:'Credentials'}, 
+                {id:'admin-ann', txt:'Announcements'}, 
+                {id:'profile', txt:'Profile'}
+            ];
+            loadView('admin-events');
+        } else {
+            items = [
+                {id:'stu-home', txt:'Home'}, 
+                {id:'stu-events', txt:'Events'}, 
+                {id:'stu-regs', txt:'My Tickets'}, 
+                {id:'profile', txt:'Profile'}
+            ];
+            loadView('stu-home');
+        }
+        
+        // Build Nav
+        deskNav.innerHTML = items.map(i => 
+            `<button class="btn btn-secondary nav-btn" style="background:none; color:inherit; border:none;" onclick="loadView('${i.id}', this)">${i.txt}</button>`
+        ).join('');
+        
+        mobNav.innerHTML = items.map(i => 
+            `<button onclick="loadView('${i.id}'); toggleMenu()">${i.txt}</button>`
+        ).join('');
+    }
+
+    function toggleMenu() { document.getElementById('mobile-nav').classList.toggle('show'); }
+
+    // --- API & VIEW LOGIC ---
+    async function fetchAPI(ep, method='GET', body=null) {
+        const opts = { method, headers:{'Content-Type':'application/json'} };
+        if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+        if(body) opts.body = JSON.stringify(body);
+        
+        const resp = await fetch(API+ep, opts);
+        let data = null; 
+        try { data = await resp.json(); } catch(e) { data = { message: resp.statusText }; }
+        
+        if (!resp.ok) { 
+            if (resp.status === 401 || resp.status === 403) { 
+                alert('Session expired.'); logout(); 
+            } 
+            throw new Error(data.message || 'API Error'); 
+        }
+        return data;
+    }
+
+    async function loadView(id, btn) {
+        if(btn) { 
+            // Simple active state toggle
+            document.querySelectorAll('.nav-btn').forEach(b => b.style.color = 'var(--text-light)'); 
+            btn.style.color = 'var(--primary)'; 
+        }
+        const content = document.getElementById('main-content');
+        content.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+        
+        try {
+            if(id === 'stu-home') {
+                const anns = await fetchAPI('/announcements');
+                const regs = await fetchAPI('/myregistrations');
+                const firstName = user.name ? user.name.split(' ')[0] : 'Student';
+                
+                content.innerHTML = `
+                    <div style="background: var(--gradient-hero); color:white; padding:30px; border-radius:16px; margin-bottom:30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
+                        <div>
+                            <h1 style="margin:0;">Welcome, ${firstName}!</h1>
+                            <p style="margin:5px 0 0; opacity:0.9;">Stay updated with campus activities.</p>
+                        </div>
+                        <div style="text-align:right; background:rgba(255,255,255,0.2); padding:15px; border-radius:12px;">
+                            <div style="font-size:2rem; font-weight:700;">${regs.registrations.length}</div>
+                            <div style="opacity:0.9; font-size:0.8rem;">Active Registrations</div>
+                        </div>
+                    </div>
+                    <h3>Latest Announcements</h3>
+                    <div class="grid-events" style="margin-top:20px;">
+                        ${anns.announcements.length > 0 ? anns.announcements.map(a => `
+                            <div class="card" style="border-left:4px solid var(--accent);">
+                                <h4 style="margin-top:0;">${a.title}</h4>
+                                <p style="color:var(--text-light); font-size:0.9rem;">${a.content}</p>
+                                <small style="opacity:0.6; display:block; margin-top:10px;">${new Date(a.date).toLocaleDateString()}</small>
+                            </div>
+                        `).join('') : '<p>No announcements yet.</p>'}
+                    </div>`;
+            }
+            else if(id === 'stu-events') {
+                const eventsData = await fetchAPI('/events');
+                const regData = await fetchAPI('/myregistrations');
+                const regMap = {};
+                regData.registrations.forEach(r => { regMap[r.eventId] = r.id; });
+                
+                content.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                        <h2>Browse Events</h2>
+                        <input placeholder="Search events..." style="width:100%; max-width:250px;" onkeyup="filterEvents(this.value)">
+                    </div>
+                    <div class="grid-events" id="evt-grid">
+                        ${eventsData.events.map(e => renderEventCard(e, regMap[e.id])).join('')}
+                    </div>`;
+            }
+            else if(id === 'stu-regs') {
+                const data = await fetchAPI('/myregistrations');
+                content.innerHTML = `
+                    <h2>My Tickets</h2>
+                    <div class="grid-events">
+                        ${data.registrations.length > 0 ? data.registrations.map(r => `
+                            <div class="card" style="display:flex; flex-direction:column;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                    <span style="background:rgba(79, 70, 229, 0.1); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:12px;">${r.event.type || 'Event'}</span>
+                                    <small>${new Date(r.regDate).toLocaleDateString()}</small>
+                                </div>
+                                <h3 style="margin:0 0 10px;">${r.event.name}</h3>
+                                <p style="font-size:0.9rem; color:var(--text-light);"><i class="far fa-calendar"></i> ${new Date(r.event.startDate).toLocaleString()}</p>
+                                <button class="btn btn-success" style="width:100%; margin-top:auto;" onclick="viewTicket('${r.event.name.replace(/'/g,"\'")}','${r.event.startDate}','${r.id}')">
+                                    <i class="fas fa-qrcode"></i> View Ticket
+                                </button>
+                            </div>
+                        `).join('') : '<p>You haven\'t registered for any events yet.</p>'}
+                    </div>`;
+            }
+            else if(id === 'profile') {
+                content.innerHTML = `
+                    <div class="card" style="max-width:600px; margin:0 auto;">
+                        <h3 style="border-bottom:1px solid var(--border); padding-bottom:10px; margin-top:0;">Edit Profile</h3>
+                        <form onsubmit="upProfile(event)">
+                            <div class="form-group"><label>Full Name</label><input id="pn" value="${user.name}"></div>
+                            <div class="form-group"><label>Email Address</label><input id="pe" value="${user.email||''}"></div>
+                            <div class="form-group"><label>Phone Number</label><input id="pp" value="${user.phone||''}"></div>
+                            <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+                            <div class="form-group"><label>Change Password (Optional)</label><input type="password" id="pps" placeholder="Leave blank to keep current"></div>
+                            <button class="btn btn-primary" style="width:100%;">Update Profile</button>
+                        </form>
+                    </div>`;
+            }
+            else if(id === 'admin-events') {
+                const data = await fetchAPI('/events');
+                content.innerHTML = `
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>Create Event</h3>
+                            <form id="evtForm" onsubmit="return false">
+                                <div class="form-group"><input id="new-evt-name" placeholder="Event Name" required></div>
+                                <div class="form-group"><input id="new-evt-type" placeholder="Type (e.g. Workshop)" required></div>
+                                <div class="form-group"><input type="datetime-local" id="new-evt-date" required></div>
+                                <div class="form-group">
+                                    <select id="new-evt-status">
+                                        <option value="Open">Open</option>
+                                        <option value="Closed">Closed</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><textarea id="new-evt-desc" placeholder="Description..."></textarea></div>
+                                <button type="button" class="btn btn-primary" style="width:100%" onclick="submitNewEvent()">Create Event</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <h3>Existing Events</h3>
+                            <div style="overflow-x:auto;">
+                                <table>
+                                    <thead><tr><th>Name</th><th>Status</th><th>Regs</th><th>Actions</th></tr></thead>
+                                    <tbody>
+                                        ${data.events.map(e=>`
+                                            <tr>
+                                                <td>${e.name}</td>
+                                                <td><span style="color:${e.status==='Open'?'green':'red'}">${e.status}</span></td>
+                                                <td>${e.registrationCount}</td>
+                                                <td>
+                                                    <button class="btn btn-icon" onclick="viewRegs(${e.id}, '${(e.name||'').replace(/'/g,"\'")}')" title="View Registrations"><i class="fas fa-users" style="color:var(--primary);"></i></button> 
+                                                    <button class="btn btn-icon" onclick="delEvent(${e.id})" title="Delete"><i class="fas fa-trash" style="color:#ef4444;"></i></button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="reg-view-area" style="margin-top:30px;"></div>`;
+            }
+            // ... (Rest of Admin Views kept similar but cleaned up) ...
+            else if(id === 'admin-users') {
+                const data = await fetchAPI('/users'); 
+                window.usersData = data.users;
+                content.innerHTML = `
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>Register Student</h3>
+                            <form onsubmit="createUser(event)">
+                                <div class="form-group"><input id="uname" placeholder="Full Name" required></div>
+                                <button class="btn btn-success" style="width:100%">Generate ID</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                                <h3>Student Database</h3>
+                                <button class="btn btn-outline" style="padding:5px 10px; font-size:0.8rem;" onclick="csv(window.usersData, 'Students')">Export CSV</button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table>
+                                    <thead><tr><th>GID</th><th>Name</th><th>Action</th></tr></thead>
+                                    <tbody>${data.users.map(u=>`<tr><td>${u.gid}</td><td>${u.name}</td><td><button class="btn btn-icon" onclick="delUser('${u.gid}')"><i class="fas fa-trash" style="color:red;"></i></button></td></tr>`).join('')}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            else if(id === 'admin-creds') {
+                const data = await fetchAPI('/credentials'); window.credsData = data.credentials;
+                content.innerHTML = `
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                            <h3>Credentials Access</h3>
+                            <button class="btn btn-success" onclick="csv(window.credsData, 'Creds')">Export CSV</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table><thead><tr><th>Name</th><th>GID</th><th>Password</th></tr></thead><tbody>${data.credentials.map(c=>`<tr><td>${c.name}</td><td>${c.gid}</td><td><span style="font-family:monospace; background:#eee; padding:2px 5px;">${c.password}</span></td></tr>`).join('')}</tbody></table>
+                        </div>
+                    </div>`;
+            }
+            else if(id === 'admin-ann') {
+                const data = await fetchAPI('/announcements');
+                content.innerHTML = `
+                    <div class="card">
+                        <h3>Post New Announcement</h3>
+                        <form onsubmit="postAnn(event)">
+                            <div class="form-group"><input id="at" placeholder="Announcement Title" required></div>
+                            <div class="form-group"><textarea id="ac" placeholder="Details..." required></textarea></div>
+                            <button class="btn btn-primary">Post Update</button>
+                        </form>
+                        <div style="margin-top:30px;">
+                            ${data.announcements.map(a=>`
+                                <div style="padding:15px; border:1px solid var(--border); border-radius:8px; margin-bottom:10px; display:flex; justify-content:space-between; background:var(--bg-body);">
+                                    <div>
+                                        <strong>${a.title}</strong>
+                                        <div style="color:var(--text-light); font-size:0.9rem; margin-top:5px;">${a.content}</div>
+                                    </div>
+                                    <button class="btn btn-icon" onclick="delAnn(${a.id})"><i class="fas fa-trash" style="color:red;"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+
+        } catch (err) {
+            content.innerHTML = `<div style="text-align:center; color:red;"><h3>Error Loading View</h3><p>${err.message}</p></div>`;
+        }
+    }
+
+    // --- HELPER FUNCTIONS ---
+    function renderEventCard(e, regId) {
+        const isClosed = e.status === 'Closed';
+        const img = e.imageUrl || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&q=80';
+        let btnHtml = '';
+        if (regId) { 
+            btnHtml = `<button class="btn btn-secondary" disabled style="width:100%; opacity:0.7;"><i class="fas fa-check-circle"></i> Registered</button>`; 
+        } else { 
+            btnHtml = `<button class="btn ${isClosed?'btn-danger':'btn-primary'}" onclick="regEvent('${e.id}')" ${isClosed?'disabled':''} style="width:100%;">${isClosed?'Registration Closed':'Register Now'}</button>`; 
+        }
+        return `
+            <div class="card" style="padding:0; display:flex; flex-direction:column; overflow:hidden;">
+                <div style="height:160px; background:url('${img}') center/cover;"></div>
+                <div style="padding:20px; flex-grow:1; display:flex; flex-direction:column;">
+                    <h3 style="margin-top:0;">${e.name}</h3>
+                    <p style="flex-grow:1; font-size:0.9rem; color:var(--text-light);">${e.description}</p>
+                    <div style="display:flex; justify-content:space-between; margin:15px 0; font-size:0.85rem; border-top:1px solid var(--border); padding-top:10px;">
+                        <span><i class="far fa-calendar"></i> ${new Date(e.startDate).toLocaleDateString()}</span>
+                        <span style="font-weight:600; color:${isClosed?'red':'green'}">${e.status}</span>
+                    </div>
+                    ${btnHtml}
+                </div>
+            </div>`;
+    }
+
+    function filterEvents(q) { 
+        const term = q.toLowerCase(); 
+        document.querySelectorAll('#evt-grid > .card').forEach(c => { 
+            c.style.display = c.innerText.toLowerCase().includes(term) ? 'flex' : 'none'; 
+        }); 
+    }
+    
+    // API Actions
+    async function regEvent(id) { 
+        if(confirm('Confirm Registration?')) { 
+            try { 
+                const res = await fetchAPI('/register', 'POST', {eventId:id}); 
+                alert(res.message); 
+                loadView('stu-events'); 
+            } catch(e) { alert(e.message); } 
+        } 
+    }
+    
+    window.submitNewEvent = async function() { 
+        const name = document.getElementById('new-evt-name').value; 
+        const type = document.getElementById('new-evt-type').value; 
+        const date = document.getElementById('new-evt-date').value; 
+        const status = document.getElementById('new-evt-status').value; 
+        const desc = document.getElementById('new-evt-desc').value; 
+        if(!name || !type || !date) return alert("Fill all fields"); 
+        
+        try { 
+            const res = await fetchAPI('/events', 'POST', { name, type, startDate: date, status, description: desc }); 
+            if(res.success) { alert('Event Created!'); loadView('admin-events'); } else alert(res.message); 
+        } catch(err) { console.error(err); } 
+    };
+
+    async function delEvent(id) { if(confirm('Delete this event?')) { await fetchAPI(`/events/${id}`, 'DELETE'); loadView('admin-events'); } }
+    
+    async function viewRegs(id, name) { 
+        const res = await fetchAPI(`/events/${id}/registrations`); 
+        window.currentRegData = res.registrations; 
+        const area = document.getElementById('reg-view-area'); 
+        area.innerHTML = `
+            <div class="card" style="animation: slideUp 0.3s ease;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <h3>Registrations: ${name}</h3> 
+                    <button class="btn btn-success" style="font-size:0.8rem;" onclick="csv(window.currentRegData, '${name}_Registrations')">Download CSV</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>GID</th><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
+                        <tbody>${res.registrations.map(r=>`<tr><td>${r.gid}</td><td>${r.name}</td><td>${r.email||'-'}</td><td>${r.phone||'-'}</td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            </div>`; 
+        area.scrollIntoView({behavior:'smooth'}); 
+    }
+
+    async function createUser(e) { e.preventDefault(); const res = await fetchAPI('/users', 'POST', {name:document.getElementById('uname').value}); alert(`User Created:\nGID: ${res.user.gid}\nPassword: ${res.user.password}`); e.target.reset(); loadView('admin-users'); }
+    async function delUser(gid) { if(confirm('Remove this student?')) { await fetchAPI(`/users/${gid}`, 'DELETE'); loadView('admin-users'); } }
+    async function postAnn(e) { e.preventDefault(); await fetchAPI('/announcements', 'POST', {title:document.getElementById('at').value, content:document.getElementById('ac').value}); e.target.reset(); loadView('admin-ann'); }
+    async function delAnn(id) { if(confirm('Remove announcement?')) { await fetchAPI(`/announcements/${id}`, 'DELETE'); loadView('admin-ann'); } }
+    async function upProfile(e) { e.preventDefault(); const body = { newName:document.getElementById('pn').value, email:document.getElementById('pe').value, phone:document.getElementById('pp').value }; const p = document.getElementById('pps').value; if(p) { body.newPassword = p; body.currentPassword = prompt('To change password, enter current password:'); if(!body.currentPassword) return; } const res = await fetchAPI('/profile', 'PUT', body); if(res.success) { alert('Profile Updated Successfully'); user.name=res.name; localStorage.setItem('user',JSON.stringify(user)); } else alert(res.message); }
+
+    // Ticket & CSV Utils
+    function viewTicket(evt, date, id) {
+        document.getElementById('t-evt').innerText = evt;
+        document.getElementById('t-date').innerText = new Date(date).toLocaleDateString();
+        document.getElementById('t-name').innerText = user.name;
+        document.getElementById('t-gid').innerText = user.gid;
+        document.getElementById('t-id').innerText = id;
+        document.getElementById('ticket-modal').style.display = 'flex';
+    }
+    function closeTicket() { document.getElementById('ticket-modal').style.display = 'none'; }
+    function csv(data, fname) { if(!data || !data.length) return alert('No Data to Export'); const head = Object.keys(data[0]).join(',')+'\n'; const body = data.map(r => Object.values(r).map(v=>`"${v}"`).join(',')).join('\n'); download(head+body, fname+'.csv'); }
+    function download(content, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], {type:'text/csv'})); a.download = name; a.click(); }
+</script>
+</body>
+</html>
